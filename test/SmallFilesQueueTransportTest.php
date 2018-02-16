@@ -7,7 +7,7 @@
     use NokitaKaze\Queue\SmallFilesQueueTransport;
 
     class SmallFilesQueueTransportTest extends AbstractQueueTransportTest {
-        /**
+        /** @noinspection PhpDocMissingThrowsInspection
          * @return \NokitaKaze\Queue\QueueTransport|null
          */
         function get_default_queue() {
@@ -106,7 +106,13 @@
             $missing_keys = [];
             $all_produced_keys = [];
             foreach ($filenames as $filename) {
-                list(, , $c) = $this->get_coverage_from_file_from_produce_messages($filename, microtime(true) + 30);
+                list(, , $c, $profiling) =
+                    $this->get_coverage_from_file_from_produce_messages($filename, microtime(true) + 30);
+                self::add_profiling_transport_from_profiling($event->queue, 'push', [
+                    'message_interval_size' => 1,
+                    'message_chunk_size' => 2,
+                    'message_chunk_count' => 30,
+                ], $profiling);
                 /**
                  * @var string[] $created_keys
                  */

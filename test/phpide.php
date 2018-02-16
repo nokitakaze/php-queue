@@ -5,7 +5,9 @@
     /**
      * @property mixed                                $coverage
      * @property ConsoleThreadOutputProducedMessage[] $produce_messages
-     * @property object                               $error
+     * @property \ErrorException                      $error
+     * @property double[][][]                         $profiling
+     * @property \ErrorException[]                    $error_handled
      */
     interface ConsoleThreadOutput {
     }
@@ -17,6 +19,18 @@
      * @property string $time_rnd_postfix
      */
     interface ConsoleThreadOutputProducedMessage {
+    }
+
+    /**
+     * Interface RawProfilingDatum
+     * @package NokitaKaze\Queue\Test
+     * @property string  $class_name
+     * @property string  $method_name
+     * @property array   $params
+     * @property integer $rev_count
+     * @property double  $time
+     */
+    interface RawProfilingDatum {
     }
 
 ?>

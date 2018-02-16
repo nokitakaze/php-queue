@@ -128,6 +128,7 @@
          * @param double|integer $time
          *
          * @return boolean
+         * @throws \NokitaKaze\Mutex\MutexException
          */
         protected function index_mutex_lock($time = -1) {
             if (!$this->_exclusive_mode) {
@@ -150,6 +151,7 @@
          * Устанавливаем или снимаем монопольный режим
          *
          * @param boolean $mode
+         * @throws \NokitaKaze\Mutex\MutexException
          */
         function set_exclusive_mode($mode) {
             $this->init_producer_mutex();
@@ -191,6 +193,7 @@
          * Сохраняем все сообщения, подготовленные для сохранения, в файл сообщений
          *
          * @throws QueueException
+         * @throws \NokitaKaze\Mutex\MutexException
          */
         function save() {
             if (count($this->_pushed_for_save) == 0) {
@@ -261,7 +264,7 @@
             /**
              * @var FileDBChunkFile $object
              */
-            $object = unserialize($buf);
+            $object = Queue::unserialize($buf, $is_valid);
             if (!is_object($object)) {
                 throw new QueueException('Chunk DB File "'.$filename.'" is malformed');
             }
@@ -316,6 +319,7 @@
          * @param integer $thread_id
          *
          * @return FileMutex
+         * @throws \NokitaKaze\Mutex\MutexException
          */
         protected function get_mutex_for_thread($thread_id) {
             // @todo впилить сюда mutex resolver
@@ -334,6 +338,7 @@
          * Создание мьютекса для файла с индексом на всю текущую очередь сообщений
          *
          * @return FileMutex
+         * @throws \NokitaKaze\Mutex\MutexException
          */
         protected function get_index_mutex() {
             // @todo впилить сюда mutex resolver
@@ -380,7 +385,7 @@
             $object->time_last_update = microtime(true);
             $object->queue_name = $this->get_queue_name();
             $object->queue = $data_in;
-            if (@file_put_contents($filename_tmp, serialize($object), LOCK_EX) === false) {
+            if (@file_put_contents($filename_tmp, Queue::serialize($object), LOCK_EX) === false) {
                 // @codeCoverageIgnoreStart
                 throw new QueueException('Can not save queue stream: '.FileMutex::get_last_php_error_as_string(), 2);
                 // @codeCoverageIgnoreEnd
@@ -429,6 +434,8 @@
          * @param iMessage[]|object[] $messages
          *
          * @return string[]|integer[]
+         * @throws \NokitaKaze\Mutex\MutexException
+         * @throws QueueException
          */
         function delete_messages(array $messages) {
             $this->init_producer_mutex();
@@ -480,6 +487,8 @@
          * @param string|null     $key форсированно задаём ключ сообщения
          *
          * @return boolean
+         * @throws QueueException
+         * @throws \NokitaKaze\Mutex\MutexException
          */
         function update_message($message, $key = null) {
             $this->init_producer_mutex();
@@ -517,6 +526,8 @@
          * @param double|integer $wait_time
          *
          * @return iMessage|object|null
+         * @throws \NokitaKaze\Mutex\MutexException
+         * @throws QueueException
          */
         function consume_next_message($wait_time = -1) {
             $this->set_same_time_flag(2);
@@ -612,7 +623,7 @@
             if (empty($buf)) {
                 throw new QueueException('Index File "'.$filename.'" is empty');
             }
-            $this->_index_data_full = unserialize($buf);
+            $this->_index_data_full = Queue::unserialize($buf, $is_valid);
             if (!is_object($this->_index_data_full)) {
                 throw new QueueException('Index File "'.$filename.'" is empty');
             }
@@ -655,7 +666,7 @@
             $temporary_data = clone $this->_index_data_full;
             $temporary_data->data = $this->_index_data;
 
-            if (@file_put_contents($filename_tmp, serialize($temporary_data)) === false) {
+            if (@file_put_contents($filename_tmp, Queue::serialize($temporary_data)) === false) {
                 // @codeCoverageIgnoreStart
                 throw new QueueException('Can not save index file: '.FileMutex::get_last_php_error_as_string(), 10);
                 // @codeCoverageIgnoreEnd

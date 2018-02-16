@@ -19,9 +19,9 @@
 
             if (!isset($settings->queues)) {
                 if (!isset($settings->scenario) or ($settings->scenario == 0)) {
-                    $settings->queues = self::get_scenario1_queues($settings);
+                    $settings->queues = self::get_scenario_read_small_files($settings);
                 } elseif ($settings->scenario == 1) {
-                    $settings->queues = self::get_scenario2_queues($settings);
+                    $settings->queues = self::get_scenario_write_small_files($settings);
                 } else {
                     throw new QueueException("Can not resolve scenario #{$settings->scenario}");
                 }
@@ -37,7 +37,7 @@
          *
          * @return Queue[]
          */
-        protected static function get_scenario1_queues($settings) {
+        protected static function get_scenario_read_small_files($settings) {
             /**
              * @var FileDBQueueConstructionSettingsForGeneral $sub_set1
              */
@@ -60,13 +60,12 @@
             return [$sub_set1, $sub_set2];
         }
 
-
         /**
          * @param GeneralQueueConstructionSettings $settings
          *
          * @return Queue[]
          */
-        protected static function get_scenario2_queues($settings) {
+        protected static function get_scenario_write_small_files($settings) {
             /**
              * @var SmallFilesQueueConstructionSettingsForGeneral $sub_set2
              */

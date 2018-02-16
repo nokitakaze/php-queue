@@ -21,20 +21,31 @@
   "minimum-stability": "beta",
   "require": {
     "php": "^5.6 | ^7.0.9",
+    "nokitakaze/serializer": "^0.1.1",
     "nokitakaze/mutex": "^0.1.6"
   },
   "require-dev": {
-    "phpunit/phpunit": "^6.0 | ^5.7"
+    "phpunit/phpunit": "^6.0 | ^5.7",
+    "nokitakaze/orthogonal_arrays": "^0.1.1",
+    "phpbench/phpbench": "^0.13"
   },
   "scripts": {
+    "show-benchmark": [
+      "vendor/bin/phpbench report --report='generator: \"table\", cols: [\"benchmark\", \"subject\", \"params\", \"revs\", \"its\", \"best\", \"mean\", \"worst\", \"rstdev\"], break: [\"benchmark\"]' --file=SmallFilesQueueTransportTest-profile.xml",
+      "vendor/bin/phpbench report --report='generator: \"table\", cols: [\"benchmark\", \"subject\", \"params\", \"revs\", \"its\", \"best\", \"mean\", \"worst\", \"rstdev\"], break: [\"benchmark\"]' --file=FileDBQueueTransportTest-profile.xml",
+      "vendor/bin/phpbench report --report='generator: \"table\", cols: [\"benchmark\", \"subject\", \"params\", \"revs\", \"its\", \"best\", \"mean\", \"worst\", \"rstdev\"], break: [\"benchmark\"]' --file=QueueTest-profile.xml"
+    ],
     "test-cl": [
       "vendor/bin/phpunit test --coverage-clover test/clover.xml --configuration test/phpunit.xml"
     ],
-    "test-small-files": [
+    "test-db-small-files": [
       "vendor/bin/phpunit test/SmallFilesQueueTransportTest.php --coverage-clover test/clover.xml --configuration test/phpunit.xml --coverage-html test/html-report"
     ],
-    "test-db": [
+    "test-db-large-db": [
       "vendor/bin/phpunit test/FileDBQueueTransportTest.php --coverage-clover test/clover.xml --configuration test/phpunit.xml --coverage-html test/html-report"
+    ],
+    "test-db-composite": [
+      "vendor/bin/phpunit test/QueueTest.php --coverage-clover test/clover.xml --configuration test/phpunit.xml --coverage-html test/html-report"
     ],
     "test-many": [
       "vendor/bin/phpunit test/SmallFilesQueueTransportTest.php --coverage-clover test/clover.xml --configuration test/phpunit.xml --coverage-html test/html-report --filter testProduce_by_many"

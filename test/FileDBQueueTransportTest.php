@@ -3,6 +3,7 @@
     namespace NokitaKaze\Queue\Test;
 
     use NokitaKaze\Mutex\FileMutex;
+    use NokitaKaze\OrthogonalArrays\Arrays;
     use NokitaKaze\Queue\FileDBQueueConstructionSettings;
     use NokitaKaze\Queue\FileDBQueueTransport;
     use NokitaKaze\Queue\Queue;
@@ -135,7 +136,7 @@
         }
 
         /** @noinspection PhpDocSignatureInspection */
-        /**
+        /** @noinspection PhpDocMissingThrowsInspection
          * @param FileDBQueueTransport|FileDBQueueOverload $queue1
          *
          * @dataProvider dataDefault_queue
@@ -288,7 +289,8 @@
                     } else {
                         $reflection->invoke($queue);
                     }
-                } catch (QueueException $e) {
+                } /** @noinspection PhpRedundantCatchClauseInspection */
+                catch (QueueException $e) {
                     $u = true;
                 }
                 if (!$u) {
@@ -306,7 +308,8 @@
                     } else {
                         $reflection->invoke($queue);
                     }
-                } catch (QueueException $e) {
+                } /** @noinspection PhpRedundantCatchClauseInspection */
+                catch (QueueException $e) {
                     $u = true;
                 }
                 if (!$u) {
@@ -323,7 +326,8 @@
                     } else {
                         $reflection->invoke($queue);
                     }
-                } catch (QueueException $e) {
+                } /** @noinspection PhpRedundantCatchClauseInspection */
+                catch (QueueException $e) {
                     $u = true;
                 }
                 if (!$u) {
@@ -347,7 +351,8 @@
                     } else {
                         $reflection->invoke($queue);
                     }
-                } catch (QueueException $e) {
+                } /** @noinspection PhpRedundantCatchClauseInspection */
+                catch (QueueException $e) {
                     $u = true;
                 }
                 if (!$u) {
@@ -463,7 +468,7 @@
             $this->assertTrue($queue2->get_current_index_mutex()->is_free());
         }
 
-        /**
+        /** @noinspection PhpDocMissingThrowsInspection
          * @param integer $count
          * @param string  $queue_name
          * @param string  $data_folder
@@ -536,29 +541,26 @@
         }
 
         function dataDelete_one_message_suite2() {
-            $hashes = [];
-            $data = [];
-            for ($j = 0; ($j < 18 * 3) or (count($hashes) < 18); $j++) {
-                $u1 = (mt_rand(0, 1) === 0);
-                $u2 = (mt_rand(0, 1) === 0);
-                if ($u2) {
-                    $u3 = (mt_rand(0, 1) === 0);
-                    $u4 = (mt_rand(0, 1) === 0);
-                    $u5 = (mt_rand(0, 1) === 0);
-                } else {
-                    $u3 = null;
-                    $u4 = null;
-                    $u5 = null;
-                }
-                $hash = ($u1 ? 1 : 0) | ($u2 ? 2 : 0) | ($u3 ? 4 : 0) | ($u4 ? 8 : 0) | ($u5 ? 16 : 0);
-                $hashes = array_unique(array_merge($hashes, [$hash]));
-                $data[] = [$u1, $u2, $u3, $u4, $u5, sys_get_temp_dir().'/nkt_queue_test_'.self::generate_hash()];
+            $data = [
+                [true, false, null, null, null, null],
+                [false, false, null, null, null, null],
+            ];
+            $data = array_merge($data, Arrays::generateN2_values([
+                [true, false],
+                [true],
+                [true, false],
+                [true, false],
+                [true, false],
+                [null],
+            ]));
+            foreach ($data as &$datum) {
+                $datum[5] = sys_get_temp_dir().'/nkt_queue_test_'.self::generate_hash();
             }
 
             return $data;
         }
 
-        /**
+        /** @noinspection PhpDocMissingThrowsInspection
          * @param        $u1
          * @param        $u2
          * @param        $u3
@@ -669,7 +671,7 @@
         }
 
         /** @noinspection PhpUndefinedNamespaceInspection */
-        /**
+        /** @noinspection PhpDocMissingThrowsInspection
          * @param        $queue_name
          * @param        $count
          * @param        $names_list
@@ -789,12 +791,14 @@
             $a = static::dataDefault_queue_pair();
             $data = [];
             for ($i = 0; $i < 3; $i++) {
-                foreach ($a as $datum) {
-                    foreach ([false, true] as $u1) {
-                        foreach ([false, true] as $u2) {
-                            $data[] = [$datum[0], $datum[1], $u1, $u2];
-                        }
-                    }
+                $base = Arrays::generateN2_values([
+                    range(0, count($a) - 1),
+                    [null],
+                    [false, true],
+                    [false, true],
+                ]);
+                foreach ($base as $datum) {
+                    $data[] = [$a[$datum[0]][0], $a[$datum[0]][0], $datum[2], $datum[3]];
                 }
             }
 
@@ -803,6 +807,7 @@
 
         /**
          * @return array[]
+         * @throws \NokitaKaze\OrthogonalArrays\OrthogonalArraysException
          */
         function dataProduce_and_delete() {
             if (self::$suiteName == 'slow') {
@@ -812,9 +817,11 @@
                     return ($a[1] < 100);
                 });
 
-                foreach ([1, 3] as $produce_chunk_size) {
-                    foreach ([1, 50] as $delete_chunk_size) {
-                        $data[] = [$produce_chunk_size, 100, $delete_chunk_size, false];
+                if (!self::need_fast_test()) {
+                    foreach ([1, 3] as $produce_chunk_size) {
+                        foreach ([1, 50] as $delete_chunk_size) {
+                            $data[] = [$produce_chunk_size, 100, $delete_chunk_size, false];
+                        }
                     }
                 }
                 $data = array_filter($data, function (array $a) {
@@ -853,6 +860,24 @@
             ];
         }
 
+        /**
+         * @param FileDBQueueOverload $queue
+         *
+         * @dataProvider dataDefault_queue
+         */
+        function test__clone($queue) {
+            $queue1 = clone $queue;
+            foreach (['_construction_settings', '_producer_mutex', '_index_mutex', '_index_data_full'] as $property_name) {
+                $property = new \ReflectionProperty(get_class($queue), $property_name);
+                $property->setAccessible(true);
+
+                $o1 = $property->getValue($queue);
+                $o2 = $property->getValue($queue1);
+                if (!is_null($o1) and !is_null($o2)) {
+                    $this->assertNotEquals(spl_object_hash($o1), spl_object_hash($o2));
+                }
+            }
+        }
     }
 
 ?>

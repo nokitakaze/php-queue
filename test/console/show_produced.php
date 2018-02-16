@@ -1,5 +1,8 @@
 #!/usr/bin/env php
 <?php
+    /**
+     * Это файл для дебага
+     */
 
     namespace NokitaKaze\Queue;
 

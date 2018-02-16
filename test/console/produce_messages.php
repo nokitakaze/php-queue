@@ -68,6 +68,7 @@
     /**
      * @var \NokitaKaze\Queue\QueueTransport $queue
      */
+    $full_delay = 0;
     for ($i = 0; $i < $options['message_chunk_count']; $i++) {
         $events = [];
         for ($j = 0; $j < $options['message_chunk_size']; $j++) {
@@ -82,13 +83,18 @@
             ];
             $events[] = $event;
         }
+        $ts1 = microtime(true);
         $queue->push($events);
         $queue->save();
+        $ts2 = microtime(true);
+        $full_delay += $ts2 - $ts1;
         unset($events, $event, $key, $name);
         if ($i < $options['message_chunk_count'] - 1) {
             usleep(1000000 * $options['message_interval_size']);
         }
     }
+    QueueTestConsole::add_profiling(get_class($queue), 'push',
+        intval($options['message_chunk_count']), $full_delay);
     QueueTestConsole::$produce_messages = $data;
     QueueTestConsole::$success = true;
 ?>

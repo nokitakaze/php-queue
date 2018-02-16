@@ -2,6 +2,8 @@
 
     namespace NokitaKaze\Queue;
 
+    use \NokitaKaze\Serializer\Serializer;
+
     class Queue extends AbstractQueueTransport {
         const ProducerThreadCount = 5;
         const DefaultDBFileCount = 10;
@@ -232,7 +234,6 @@
          * @param string|null     $key форсированно задаём ключ сообщения
          *
          * @return boolean
-         * @throws QueueException
          */
         function update_message($message, $key = null) {
             $this_key = !is_null($key) ? $key : self::get_real_key_for_message($message);
@@ -292,6 +293,25 @@
             }
 
             return true;
+        }
+
+        /**
+         * @param mixed $data
+         *
+         * @return string
+         */
+        static function serialize($data) {
+            return Serializer::serialize($data);
+        }
+
+        /**
+         * @param string  $string
+         * @param boolean $is_valid
+         *
+         * @return mixed
+         */
+        static function unserialize($string, &$is_valid) {
+            return Serializer::unserialize($string, $is_valid);
         }
     }
 

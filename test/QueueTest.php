@@ -7,6 +7,9 @@
     use NokitaKaze\Queue\QueueTransport;
 
     class QueueTest extends AbstractQueueTransportTest {
+        const SCENARIO_READ = 0;
+        const SCENARIO_WRITE = 1;
+
         /**
          * @return null
          */
@@ -28,23 +31,28 @@
             $data = [];
             $queue = $this->dataDefault_queue()[1][0];
             if (self::$suiteName == 'slow') {
-                $item = [$queue, 10, ['inner_scenario' => 2, 'message_interval_size' => 0.1, 'message_chunk_count' => 100]];
+                $item = [$queue, 30, ['inner_scenario' => self::SCENARIO_READ,
+                                      'message_interval_size' => 0.1, 'message_chunk_count' => 100]];
                 $data[] = $item;
             } else {
-                foreach ([0, 1] as $inner_scenario) {
-                    foreach ([1, 5, 20] as $thread_count) {
+                $a = self::need_fast_test() ? [1, 3, 5] : [1, 5, 20];
+
+                foreach ([self::SCENARIO_READ, self::SCENARIO_WRITE] as $inner_scenario) {
+                    foreach ($a as $thread_count) {
                         $item = [$queue, $thread_count, ['inner_scenario' => $inner_scenario]];
                         $data[] = $item;
                     }
                 }
-                $item = [$queue, 10, ['inner_scenario' => 2]];
-                $data[] = $item;
+                if (!self::need_fast_test()) {
+                    $item = [$queue, 30, ['inner_scenario' => self::SCENARIO_READ]];
+                    $data[] = $item;
+                }
             }
 
             return $data;
         }
 
-        /**
+        /** @noinspection PhpDocMissingThrowsInspection
          * @return QueueTransport[][]
          */
         function dataDefault_queue_pair() {
@@ -56,7 +64,7 @@
             $settings_read = new \stdClass();
             $settings_read->name = 'foobar';
             $settings_read->folder = self::$_folder_static;
-            $settings_read->scenario = 0;
+            $settings_read->scenario = self::SCENARIO_READ;
 
             /**
              * @var \NokitaKaze\Queue\GeneralQueueConstructionSettings $settings_write
@@ -64,7 +72,7 @@
             $settings_write = new \stdClass();
             $settings_write->name = 'foobar';
             $settings_write->folder = self::$_folder_static;
-            $settings_write->scenario = 1;
+            $settings_write->scenario = self::SCENARIO_WRITE;
 
             $queue_read = QueueFactory::get_queue($settings_read);
             $queue_write = QueueFactory::get_queue($settings_write);
@@ -72,7 +80,7 @@
             return [[$queue_write, $queue_read]];
         }
 
-        /**
+        /** @noinspection PhpDocMissingThrowsInspection
          * @param QueueTransport $queue1
          */
         function testClear_consumed_keys(QueueTransport $queue1 = null) {
@@ -101,24 +109,49 @@
         }
 
         /**
+         * @param $queue
+         *
+         * @dataProvider dataDefault_queue
+         */
+        function test__clone($queue) {
+            $queue1 = clone $queue;
+            $property1 = new \ReflectionProperty(get_class($queue), '_general_queue');
+            $property1->setAccessible(true);
+            $property2 = new \ReflectionProperty(get_class($queue), '_additional_queue');
+            $property2->setAccessible(true);
+
+            $this->assertNotEquals(spl_object_hash($property1->getValue($queue)),
+                spl_object_hash($property1->getValue($queue1)));
+
+            $a = $property2->getValue($queue);
+            $b = $property2->getValue($queue1);
+            foreach ($a as $num => $value) {
+                $this->assertNotEquals(spl_object_hash($value), spl_object_hash($b[$num]));
+            }
+        }
+
+        /**
          * @return array[]
+         * @throws \NokitaKaze\OrthogonalArrays\OrthogonalArraysException
          */
         function dataProduce_and_delete() {
             $data = array_filter(parent::dataProduce_and_delete(), function (array $a) {
                 return ($a[1] < 100);
             });
 
-            foreach ([1, 3] as $produce_chunk_size) {
-                foreach ([1, 50] as $delete_chunk_size) {
-                    $data[] = [$produce_chunk_size, 30, $delete_chunk_size, false];
+            if (!self::need_fast_test()) {
+                foreach ([1, 3] as $produce_chunk_size) {
+                    foreach ([1, 20] as $delete_chunk_size) {
+                        $data[] = [$produce_chunk_size, 30, $delete_chunk_size, false];
+                    }
                 }
-            }
 
-            foreach ($this->dataDefault_queue_pair() as $a) {
-                foreach ($data as &$datum) {
-                    if (count($datum) == 4) {
-                        $datum[] = $a[0];
-                        $datum[] = $a[1];
+                foreach ($this->dataDefault_queue_pair() as $a) {
+                    foreach ($data as &$datum) {
+                        if (count($datum) == 4) {
+                            $datum[] = $a[0];
+                            $datum[] = $a[1];
+                        }
                     }
                 }
             }
@@ -139,7 +172,7 @@
                 $names[] = Queue::get_real_key_for_message($event);
             }
             $this->assertEquals(count($names), count(array_unique($names)),
-                'Not unique keys found');
+                'Non unique keys found');
         }
 
         function testCreating_unique_messages_multi_thread() {
@@ -182,6 +215,17 @@
 
             $this->assertEquals(count($names), count(array_unique($names)),
                 'Non unique keys found');
+        }
+
+        // @hint Мы не тестируем dataProduce_many_to_single_folder, потому что этот метод для однотипных тредов
+
+        function dataProduce_by_many_delete_by_single() {
+            $data = parent::dataProduce_by_many_delete_by_single();
+            foreach ($data as &$datum) {
+                $datum[2]['inner_scenario'] = self::SCENARIO_WRITE;
+            }
+
+            return $data;
         }
     }
 

@@ -17,7 +17,7 @@
          */
         static $producer_id = null;
 
-        /**
+        /** @noinspection PhpDocMissingThrowsInspection
          * FileDBQueueOverload constructor.
          *
          * @param \NokitaKaze\Queue\FileDBQueueConstructionSettings|object $settings
@@ -41,7 +41,7 @@
             }
         }
 
-        /**
+        /** @noinspection PhpDocMissingThrowsInspection
          * Паблик Морозов для текущего мьютекса, одного на всю заданную очередь сообщений
          *
          * @return FileMutex
@@ -54,7 +54,7 @@
             return $this->_reflection->getValue($this);
         }
 
-        /**
+        /** @noinspection PhpDocMissingThrowsInspection
          * @return boolean
          */
         function lock_mutex_exists() {
@@ -75,7 +75,7 @@
             return (($mutex !== null) and !$mutex->is_free());
         }
 
-        /**
+        /** @noinspection PhpDocMissingThrowsInspection
          * @return integer
          */
         function get_index_data_length() {

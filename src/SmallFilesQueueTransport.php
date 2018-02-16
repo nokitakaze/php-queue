@@ -84,7 +84,7 @@
             $filename = sprintf('%s/smartqueue_%s%s.chunk.dat',
                 $folder, number_format(microtime(true), 4, '.', ''), $this->_chunk_file_postfix);
 
-            $u = file_put_contents($filename, serialize($data), LOCK_EX);
+            $u = file_put_contents($filename, Queue::serialize($data), LOCK_EX);
             if ($u === false) {
                 // @codeCoverageIgnoreStart
                 throw new QueueException('Can not save queue to a file: '.FileMutex::get_last_php_error_as_string());
@@ -137,7 +137,6 @@
          * @param double|integer $wait_time
          *
          * @return iMessage|object|null
-         * @throws QueueException
          */
         protected function consume_next_message_without_inotify($wait_time = -1) {
             $start = microtime(true);
@@ -207,7 +206,7 @@
             /**
              * @var SmallFilesQueueSingleFile $file_data
              */
-            $file_data = @unserialize($buf);
+            $file_data = Queue::unserialize($buf, $is_valid);
             if (!is_object($file_data)) {
                 // File does not contain Single Queue object
                 flock($fi, LOCK_UN);
@@ -349,7 +348,7 @@
                 /**
                  * @var SmallFilesQueueSingleFile $data
                  */
-                $data = @unserialize($buf);
+                $data = Queue::unserialize($buf, $is_valid);
                 if (!is_object($data)) {
                     flock($fo, LOCK_UN);
                     fclose($fo);
@@ -391,7 +390,7 @@
                     continue;
                 }
                 $data->queue = $new_queue;
-                $u = file_put_contents($filename, serialize($data));
+                $u = file_put_contents($filename, Queue::serialize($data));
                 if ($u === false) {
                     // @codeCoverageIgnoreStart
                     throw new QueueException('Can not save single query file "'.$filename.'": '.
@@ -447,7 +446,7 @@
             /**
              * @var SmallFilesQueueSingleFile $data_in
              */
-            $data_in = @unserialize($buf);
+            $data_in = Queue::unserialize($buf, $is_valid);
             if (!is_object($data_in)) {
                 flock($fo, LOCK_UN);
                 fclose($fo);
@@ -470,7 +469,7 @@
             // Ищем то же сообщение и заменяем его
             $exists = $this->change_message_in_array($data_in->queue, $message, $this_key);
             if ($exists) {
-                $u = file_put_contents($filename, serialize($data_in));
+                $u = file_put_contents($filename, Queue::serialize($data_in));
                 if ($u === false) {
                     // @codeCoverageIgnoreStart
                     throw new QueueException('Can not save single query file "'.$filename.'": '.
