@@ -63,7 +63,7 @@
         /**
          * @param GeneralQueueConstructionSettings $settings
          *
-         * @return Queue[]
+         * @return SmallFilesQueueConstructionSettingsForGeneral[]
          */
         protected static function get_scenario_write_small_files($settings) {
             /**
